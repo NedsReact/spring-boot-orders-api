@@ -9,45 +9,57 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.ned.demo.models.Order;
+import com.ned.demo.repositories.OrderRepository;
 
 @Service
-public class OrderService {
-
-	private final Map<Long,Order> store=new HashMap<>();
-	private long nextId=1;
+public class OrderService {	
+	
+	private final OrderRepository repository;
+	
+	public OrderService(OrderRepository repository)
+	{
+		this.repository=repository;
+	}
 	
 	public List<Order> findAll()
 	{
-		return new ArrayList<>(store.values());
+		return this.repository.findAll();
 	}
 	
 	public Optional<Order> findById(Long id)
 	{
-		return Optional.ofNullable(store.get(id));
+		return this.repository.findById(id);
 	}
 
-	public Order create(Order order) 
-	{
-		order.setOrderId(nextId++);
-		store.put(order.getOrderId(), order);
-		return order;
-	}
+	 public Order create(Order order) 
+	 {
+	        // ensure ID is null so JPA generates it
+	        order.setOrderId(null);
+	        return this.repository.save(order);
+	 }
 	
 	public Optional<Order> update(Long id, Order updated)
 	{
-		if (!store.containsKey(id)) return Optional.empty();
-		updated.setOrderId(id);
-		store.put(id, updated);
-		return Optional.of(updated);
+		 if (!repository.existsById(id)) {
+	            return Optional.empty();
+	        }
+	        updated.setOrderId(id);
+	        Order saved = repository.save(updated);
+	        return Optional.of(saved);
 	}
 	
 	public boolean delete(Long id)
 	{
-		return store.remove(id)!=null;
+		if (!repository.existsById(id)) {
+            return false;
+        }
+        repository.deleteById(id);
+        return true;
 	}
 	
 	
 }
+
 
 
 
